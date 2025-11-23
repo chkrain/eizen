@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Матрица Эйзенхауэра</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 15px;
+            height: 70vh;
+            margin-bottom: 30px;
+        }
+
+        .quadrant {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .quadrant:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .quadrant-1 { border-color: #e74c3c; }
+        .quadrant-2 { border-color: #3498db; }
+        .quadrant-3 { border-color: #f39c12; }
+        .quadrant-4 { border-color: #27ae60; }
+
+        .quadrant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid currentColor;
+        }
+
+        .quadrant-1 .quadrant-header { color: #e74c3c; }
+        .quadrant-2 .quadrant-header { color: #3498db; }
+        .quadrant-3 .quadrant-header { color: #f39c12; }
+        .quadrant-4 .quadrant-header { color: #27ae60; }
+
+        .quadrant-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .task-count {
+            background: currentColor;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+
+        .tasks {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .task {
+            background: #f8f9fa;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid currentColor;
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+
+        .task:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .task.dragging {
+            opacity: 0.5;
+        }
+
+        .task-content {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+        }
+
+        .task-text {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .task:hover .task-actions {
+            opacity: 1;
+        }
+
+        .btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 3px;
+            font-size: 0.9rem;
+        }
+
+        .btn-delete { color: #e74c3c; }
+        .btn-edit { color: #3498db; }
+
+        .add-task {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .task-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .btn-add {
+            background: currentColor;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .btn-control {
+            background: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .btn-control:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .btn-save { background: #27ae60; color: white; }
+        .btn-load { background: #3498db; color: white; }
+        .btn-clear { background: #e74c3c; color: white; }
+
+        /* Стили для скроллбара */
+        .tasks::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tasks::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .tasks::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .tasks::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        @media (max-width: 768px) {
+            .matrix {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, 1fr);
+                height: auto;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Матрица Эйзенхауэра</h1>
+            <p class="description">Распределите задачи по важности и срочности</p>
+        </header>
+
+        <div class="matrix">
+            <div class="quadrant quadrant-1" data-quadrant="1">
+                <div class="quadrant-header">
+                    <div class="quadrant-title">Срочно и Важно</div>
+                    <div class="task-count">0</div>
+                </div>
+                <div class="tasks" id="quadrant-1-tasks"></div>
+                <div class="add-task">
+                    <input type="text" class="task-input" placeholder="Добавить задачу...">
+                    <button class="btn-add">+</button>
+                </div>
+            </div>
+
+            <div class="quadrant quadrant-2" data-quadrant="2">
+                <div class="quadrant-header">
+                    <div class="quadrant-title">Не срочно, но Важно</div>
+                    <div class="task-count">0</div>
+                </div>
+                <div class="tasks" id="quadrant-2-tasks"></div>
+                <div class="add-task">
+                    <input type="text" class="task-input" placeholder="Добавить задачу...">
+                    <button class="btn-add">+</button>
+                </div>
+            </div>
+
+            <div class="quadrant quadrant-3" data-quadrant="3">
+                <div class="quadrant-header">
+                    <div class="quadrant-title">Срочно, но Не важно</div>
+                    <div class="task-count">0</div>
+                </div>
+                <div class="tasks" id="quadrant-3-tasks"></div>
+                <div class="add-task">
+                    <input type="text" class="task-input" placeholder="Добавить задачу...">
+                    <button class="btn-add">+</button>
+                </div>
+            </div>
+
+            <div class="quadrant quadrant-4" data-quadrant="4">
+                <div class="quadrant-header">
+                    <div class="quadrant-title">Не срочно и Не важно</div>
+                    <div class="task-count">0</div>
+                </div>
+                <div class="tasks" id="quadrant-4-tasks"></div>
+                <div class="add-task">
+                    <input type="text" class="task-input" placeholder="Добавить задачу...">
+                    <button class="btn-add">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-control btn-save" onclick="saveData()">Сохранить</button>
+            <button class="btn-control btn-load" onclick="loadData()">Загрузить</button>
+            <button class="btn-control btn-clear" onclick="clearData()">Очистить всё</button>
+        </div>
+    </div>
+
+    <script>
+        class EisenhowerMatrix {
+            constructor() {
+                this.tasks = {
+                    1: [], // Срочно и важно
+                    2: [], // Не срочно, но важно
+                    3: [], // Срочно, но не важно
+                    4: []  // Не срочно и не важно
+                };
+                this.nextId = 1;
+                this.init();
+            }
+
+            init() {
+                this.loadFromStorage();
+                this.renderAll();
+                this.setupEventListeners();
+                this.setupDragAndDrop();
+            }
+
+            setupEventListeners() {
+                // Добавление задач
+                document.querySelectorAll('.add-task').forEach(container => {
+                    const input = container.querySelector('.task-input');
+                    const button = container.querySelector('.btn-add');
+                    const quadrant = container.closest('.quadrant').dataset.quadrant;
+
+                    const addTask = () => {
+                        const text = input.value.trim();
+                        if (text) {
+                            this.addTask(quadrant, text);
+                            input.value = '';
+                        }
+                    };
+
+                    button.addEventListener('click', addTask);
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') addTask();
+                    });
+                });
+            }
+
+            setupDragAndDrop() {
+                document.querySelectorAll('.task').forEach(task => {
+                    task.setAttribute('draggable', 'true');
+                    
+                    task.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', task.dataset.id);
+                        task.classList.add('dragging');
+                    });
+
+                    task.addEventListener('dragend', () => {
+                        task.classList.remove('dragging');
+                    });
+                });
+
+                document.querySelectorAll('.tasks').forEach(container => {
+                    container.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                    });
+
+                    container.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const taskId = e.dataTransfer.getData('text/plain');
+                        const newQuadrant = container.id.split('-')[1];
+                        this.moveTask(taskId, newQuadrant);
+                    });
+                });
+            }
+
+            addTask(quadrant, text) {
+                const task = {
+                    id: this.nextId++,
+                    text: text,
+                    createdAt: new Date().toISOString()
+                };
+                
+                this.tasks[quadrant].push(task);
+                this.saveToStorage();
+                this.renderQuadrant(quadrant);
+            }
+
+            deleteTask(quadrant, taskId) {
+                this.tasks[quadrant] = this.tasks[quadrant].filter(task => task.id != taskId);
+                this.saveToStorage();
+                this.renderQuadrant(quadrant);
+            }
+
+            moveTask(taskId, newQuadrant) {
+                let taskToMove = null;
+                let oldQuadrant = null;
+
+                // Находим задачу и её текущий квадрант
+                for (const [quadrant, tasks] of Object.entries(this.tasks)) {
+                    const task = tasks.find(t => t.id == taskId);
+                    if (task) {
+                        taskToMove = task;
+                        oldQuadrant = quadrant;
+                        break;
+                    }
+                }
+
+                if (taskToMove && oldQuadrant && oldQuadrant !== newQuadrant) {
+                    // Удаляем из старого квадранта
+                    this.tasks[oldQuadrant] = this.tasks[oldQuadrant].filter(t => t.id != taskId);
+                    // Добавляем в новый квадрант
+                    this.tasks[newQuadrant].push(taskToMove);
+                    this.saveToStorage();
+                    this.renderQuadrant(oldQuadrant);
+                    this.renderQuadrant(newQuadrant);
+                }
+            }
+
+            renderQuadrant(quadrant) {
+                const container = document.getElementById(`quadrant-${quadrant}-tasks`);
+                const countElement = container.closest('.quadrant').querySelector('.task-count');
+                
+                container.innerHTML = '';
+                countElement.textContent = this.tasks[quadrant].length;
+
+                this.tasks[quadrant].forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = 'task';
+                    taskElement.dataset.id = task.id;
+                    taskElement.draggable = true;
+                    
+                    taskElement.innerHTML = `
+                        <div class="task-content">
+                            <div class="task-text">${this.escapeHtml(task.text)}</div>
+                            <div class="task-actions">
+                                <button class="btn btn-edit" onclick="matrix.editTask(${quadrant}, ${task.id})">✏️</button>
+                                <button class="btn btn-delete" onclick="matrix.deleteTask(${quadrant}, ${task.id})">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(taskElement);
+                });
+
+                this.setupDragAndDrop();
+            }
+
+            renderAll() {
+                for (let quadrant = 1; quadrant <= 4; quadrant++) {
+                    this.renderQuadrant(quadrant);
+                }
+            }
+
+            editTask(quadrant, taskId) {
+                const task = this.tasks[quadrant].find(t => t.id == taskId);
+                if (task) {
+                    const newText = prompt('Редактировать задачу:', task.text);
+                    if (newText !== null && newText.trim() !== '') {
+                        task.text = newText.trim();
+                        this.saveToStorage();
+                        this.renderQuadrant(quadrant);
+                    }
+                }
+            }
+
+            escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            saveToStorage() {
+                localStorage.setItem('eisenhowerMatrix', JSON.stringify({
+                    tasks: this.tasks,
+                    nextId: this.nextId
+                }));
+            }
+
+            loadFromStorage() {
+                const saved = localStorage.getItem('eisenhowerMatrix');
+                if (saved) {
+                    try {
+                        const data = JSON.parse(saved);
+                        this.tasks = data.tasks || this.tasks;
+                        this.nextId = data.nextId || this.nextId;
+                    } catch (e) {
+                        console.error('Ошибка загрузки данных:', e);
+                    }
+                }
+            }
+
+            clearAll() {
+                if (confirm('Вы уверены, что хотите удалить все задачи?')) {
+                    this.tasks = {1: [], 2: [], 3: [], 4: []};
+                    this.nextId = 1;
+                    this.saveToStorage();
+                    this.renderAll();
+                }
+            }
+
+            exportData() {
+                const data = {
+                    tasks: this.tasks,
+                    nextId: this.nextId,
+                    exportedAt: new Date().toISOString()
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `eisenhower-matrix-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            importData(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        if (data.tasks) {
+                            this.tasks = data.tasks;
+                            this.nextId = data.nextId || this.nextId;
+                            this.saveToStorage();
+                            this.renderAll();
+                            alert('Данные успешно загружены!');
+                        }
+                    } catch (error) {
+                        alert('Ошибка при загрузке файла: неверный формат');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // Глобальные функции для кнопок
+        const matrix = new EisenhowerMatrix();
+
+        function saveData() {
+            matrix.exportData();
+        }
+
+        function loadData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    matrix.importData(file);
+                }
+            };
+            input.click();
+        }
+
+        function clearData() {
+            matrix.clearAll();
+        }
+    </script>
+</body>
+</html>
