@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
     <meta name="theme-color" content="#667eea">
-    <title>Записи дел</title>
+    <title>Матрица Эйзенхауэра</title>
     <style>
         * {
             margin: 0;
@@ -176,7 +176,8 @@
             font-weight: bold;
         }
 
-        .task-count {   
+        .task-count {
+            background: currentColor;
             color: white;
             padding: 2px 8px;
             border-radius: 12px;
@@ -197,6 +198,7 @@
             border-left: 4px solid currentColor;
             cursor: grab;
             transition: all 0.2s ease;
+            position: relative;
         }
 
         [data-theme="dark"] .task {
@@ -249,6 +251,7 @@
 
         .btn-delete { color: #e74c3c; }
         .btn-edit { color: #3498db; }
+        .btn-notification { color: #9b59b6; }
 
         .add-task {
             display: flex;
@@ -267,6 +270,8 @@
         }
 
         .btn-add {
+            background: currentColor;
+            color: white;
             border: none;
             padding: 10px 15px;
             border-radius: 5px;
@@ -310,6 +315,7 @@
         .btn-clear { background: #e74c3c; color: white; }
         .btn-share { background: #9b59b6; color: white; }
         .btn-import { background: #e67e22; color: white; }
+        .btn-notifications { background: #e74c3c; color: white; }
 
         /* Стили для скроллбара */
         .tasks::-webkit-scrollbar {
@@ -357,6 +363,21 @@
             z-index: 1000;
             transform: translateX(150%);
             transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.urgent {
+            background: #e74c3c;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translateX(0) scale(1); }
+            50% { transform: translateX(0) scale(1.05); }
+            100% { transform: translateX(0) scale(1); }
         }
 
         .stats {
@@ -436,6 +457,111 @@
         .btn-clear-notes { background: #95a5a6; color: white; }
         .btn-notes-toggle { background: #f39c12; color: white; }
 
+        /* Модальное окно для уведомлений */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        [data-theme="dark"] .modal-content {
+            background: #2d2d2d;
+            color: white;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #e74c3c;
+            text-align: center;
+        }
+
+        .notification-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .time-input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .notification-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+            margin-bottom: 10px;
+        }
+
+        [data-theme="dark"] .notification-item {
+            background: #3d3d3d;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .btn-cancel-notification {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .urgent-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+
+        .task-with-notification {
+            border-right: 3px solid #e74c3c;
+        }
+
         /* Мобильная адаптация */
         @media (max-width: 768px) {
             .matrix {
@@ -494,6 +620,15 @@
             .notes-actions {
                 flex-direction: column;
             }
+
+            .modal-content {
+                padding: 20px;
+                margin: 20px;
+            }
+
+            .task-actions {
+                opacity: 1;
+            }
         }
 
         @media (max-width: 480px) {
@@ -518,10 +653,6 @@
             .task {
                 padding: 10px;
             }
-
-            .task-actions {
-                opacity: 1; /* Всегда показываем кнопки на мобильных */
-            }
         }
     </style>
 </head>
@@ -539,10 +670,11 @@
 
         <header>
             <h1>Матрица Эйзенхауэра</h1>
-            <p class="description">Распредение задач по важности и срочности, можно делиться</p>
+            <p class="description">Распределите задачи по важности и срочности</p>
             <div class="stats">
                 <div class="stat-item">Всего задач: <span id="totalTasks">0</span></div>
                 <div class="stat-item">Выполнено: <span id="completedTasks">0</span></div>
+                <div class="stat-item">Уведомления: <span id="activeNotifications">0</span></div>
             </div>
         </header>
 
@@ -602,6 +734,7 @@
             <button class="btn-control btn-clear" onclick="clearData()">Очистить всё</button>
             <button class="btn-control btn-share" onclick="shareMatrix()">📤 Поделиться</button>
             <button class="btn-control btn-import" onclick="importFromUrl()">📥 Импорт</button>
+            <button class="btn-control btn-notifications" onclick="showNotificationsModal()">🔔 Уведомления</button>
         </div>
 
         <div class="notes-section">
@@ -619,6 +752,36 @@
         </div>
     </div>
 
+    <!-- Модальное окно для уведомлений -->
+    <div class="modal" id="notificationsModal">
+        <div class="modal-content">
+            <h3>🔔 Управление уведомлениями</h3>
+            <div class="notification-settings">
+                <div>
+                    <h4>Добавить уведомление для задачи</h4>
+                    <p>Выберите задачу и установите время напоминания</p>
+                </div>
+                
+                <div id="activeNotificationsList">
+                    <!-- Список активных уведомлений будет здесь -->
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <h4>Настройки уведомлений</h4>
+                    <label>
+                        <input type="checkbox" id="enableNotifications" checked>
+                        Включить уведомления в браузере
+                    </label>
+                </div>
+                
+                <div class="notification-actions">
+                    <button class="btn-control" onclick="closeNotificationsModal()">Закрыть</button>
+                    <button class="btn-control btn-clear" onclick="clearAllNotifications()">Очистить все уведомления</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         class EisenhowerMatrix {
             constructor() {
@@ -629,6 +792,7 @@
                     4: []  // Не срочно и не важно
                 };
                 this.nextId = 1;
+                this.notifications = [];
                 this.init();
             }
 
@@ -639,13 +803,14 @@
                 this.setupDragAndDrop();
                 this.updateStats();
                 this.setupTheme();
+                this.checkNotifications();
+                setInterval(() => this.checkNotifications(), 60000); // Проверка каждую минуту
             }
 
             setupTheme() {
                 const savedTheme = localStorage.getItem('eisenhowerTheme') || 'light';
                 this.setTheme(savedTheme);
                 
-                // Обработчики для кнопок темы
                 document.querySelectorAll('.theme-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const theme = btn.dataset.theme;
@@ -658,14 +823,12 @@
                 document.documentElement.setAttribute('data-theme', theme);
                 localStorage.setItem('eisenhowerTheme', theme);
                 
-                // Обновляем активную кнопку темы
                 document.querySelectorAll('.theme-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.theme === theme);
                 });
             }
 
             setupEventListeners() {
-                // Добавление задач
                 document.querySelectorAll('.add-task').forEach(container => {
                     const input = container.querySelector('.task-input');
                     const button = container.querySelector('.btn-add');
@@ -688,12 +851,10 @@
             }
 
             setupDragAndDrop() {
-                // Удаляем старые обработчики
                 document.querySelectorAll('.task').forEach(task => {
                     task.replaceWith(task.cloneNode(true));
                 });
 
-                // Добавляем новые обработчики
                 document.querySelectorAll('.task').forEach(task => {
                     task.setAttribute('draggable', 'true');
                     
@@ -735,7 +896,8 @@
                     id: this.nextId++,
                     text: text,
                     createdAt: new Date().toISOString(),
-                    completed: false
+                    completed: false,
+                    notifications: []
                 };
                 
                 this.tasks[quadrant].push(task);
@@ -745,6 +907,8 @@
             }
 
             deleteTask(quadrant, taskId) {
+                // Удаляем уведомления для этой задачи
+                this.notifications = this.notifications.filter(notif => notif.taskId != taskId);
                 this.tasks[quadrant] = this.tasks[quadrant].filter(task => task.id != taskId);
                 this.saveToStorage();
                 this.renderQuadrant(quadrant);
@@ -752,11 +916,103 @@
                 this.showNotification('Задача удалена');
             }
 
+            addNotification(quadrant, taskId, minutesFromNow) {
+                const task = this.tasks[quadrant].find(t => t.id == taskId);
+                if (task) {
+                    const notificationTime = new Date(Date.now() + minutesFromNow * 60000);
+                    const notification = {
+                        id: Date.now() + Math.random(),
+                        taskId: taskId,
+                        quadrant: quadrant,
+                        taskText: task.text,
+                        notifyAt: notificationTime.toISOString(),
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    this.notifications.push(notification);
+                    task.notifications.push(notification.id);
+                    this.saveToStorage();
+                    this.renderQuadrant(quadrant);
+                    this.updateStats();
+                    this.showNotification(`Уведомление установлено на ${notificationTime.toLocaleTimeString()}`);
+                    
+                    return notification;
+                }
+            }
+
+            removeNotification(notificationId) {
+                this.notifications = this.notifications.filter(notif => notif.id != notificationId);
+                // Удаляем ID уведомления из задачи
+                for (const quadrant in this.tasks) {
+                    this.tasks[quadrant].forEach(task => {
+                        task.notifications = task.notifications.filter(id => id != notificationId);
+                    });
+                }
+                this.saveToStorage();
+                this.renderAll();
+                this.updateStats();
+            }
+
+            checkNotifications() {
+                const now = new Date();
+                const enabled = document.getElementById('enableNotifications')?.checked ?? true;
+                
+                if (!enabled) return;
+
+                this.notifications.forEach(notification => {
+                    const notifyTime = new Date(notification.notifyAt);
+                    if (now >= notifyTime && !notification.shown) {
+                        this.showBrowserNotification(notification);
+                        notification.shown = true;
+                    }
+                });
+
+                // Удаляем старые показанные уведомления
+                this.notifications = this.notifications.filter(notif => {
+                    const notifyTime = new Date(notif.notifyAt);
+                    return !notif.shown || (now - notifyTime) < 300000; // Храним 5 минут после показа
+                });
+
+                this.saveToStorage();
+            }
+
+            showBrowserNotification(notification) {
+                if (!("Notification" in window)) {
+                    alert("Этот браузер не поддерживает уведомления");
+                    return;
+                }
+
+                if (Notification.permission === "granted") {
+                    this.createNotification(notification);
+                } else if (Notification.permission !== "denied") {
+                    Notification.requestPermission().then(permission => {
+                        if (permission === "granted") {
+                            this.createNotification(notification);
+                        }
+                    });
+                }
+            }
+
+            createNotification(notification) {
+                const notify = new Notification("⏰ Матрица Эйзенхауэра", {
+                    body: `Срочная задача: ${notification.taskText}`,
+                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>",
+                    tag: "eisenhower-matrix"
+                });
+
+                notify.onclick = () => {
+                    window.focus();
+                    notify.close();
+                };
+
+                // Показываем также всплывающее уведомление на сайте
+                this.showNotification(`⏰ ${notification.taskText}`, 'urgent');
+            }
+
             moveTask(taskId, newQuadrant) {
                 let taskToMove = null;
                 let oldQuadrant = null;
 
-                // Находим задачу и её текущий квадрант
                 for (const [quadrant, tasks] of Object.entries(this.tasks)) {
                     const task = tasks.find(t => t.id == taskId);
                     if (task) {
@@ -767,9 +1023,7 @@
                 }
 
                 if (taskToMove && oldQuadrant && oldQuadrant !== newQuadrant) {
-                    // Удаляем из старого квадранта
                     this.tasks[oldQuadrant] = this.tasks[oldQuadrant].filter(t => t.id != taskId);
-                    // Добавляем в новый квадрант
                     this.tasks[newQuadrant].push(taskToMove);
                     this.saveToStorage();
                     this.renderQuadrant(oldQuadrant);
@@ -797,16 +1051,26 @@
 
                 this.tasks[quadrant].forEach(task => {
                     const taskElement = document.createElement('div');
-                    taskElement.className = `task ${task.completed ? 'completed' : ''}`;
+                    const hasNotifications = task.notifications && task.notifications.length > 0;
+                    taskElement.className = `task ${task.completed ? 'completed' : ''} ${hasNotifications ? 'task-with-notification' : ''}`;
                     taskElement.dataset.id = task.id;
                     taskElement.draggable = true;
+                    
+                    let notificationBadge = '';
+                    if (hasNotifications) {
+                        const activeNotifs = this.notifications.filter(n => task.notifications.includes(n.id) && !n.shown);
+                        if (activeNotifs.length > 0) {
+                            notificationBadge = `<span class="urgent-badge">⏰</span>`;
+                        }
+                    }
                     
                     taskElement.innerHTML = `
                         <div class="task-content">
                             <div class="task-text" onclick="matrix.toggleTask(${quadrant}, ${task.id})">
-                                ${this.escapeHtml(task.text)}
+                                ${this.escapeHtml(task.text)} ${notificationBadge}
                             </div>
                             <div class="task-actions">
+                                <button class="btn btn-notification" onclick="matrix.setNotification(${quadrant}, ${task.id})" title="Добавить уведомление">⏰</button>
                                 <button class="btn btn-edit" onclick="matrix.editTask(${quadrant}, ${task.id})">✏️</button>
                                 <button class="btn btn-delete" onclick="matrix.deleteTask(${quadrant}, ${task.id})">🗑️</button>
                             </div>
@@ -822,6 +1086,13 @@
             renderAll() {
                 for (let quadrant = 1; quadrant <= 4; quadrant++) {
                     this.renderQuadrant(quadrant);
+                }
+            }
+
+            setNotification(quadrant, taskId) {
+                const minutes = prompt('Через сколько минут напомнить? (введите число):', '60');
+                if (minutes && !isNaN(minutes)) {
+                    this.addNotification(quadrant, taskId, parseInt(minutes));
                 }
             }
 
@@ -851,15 +1122,18 @@
                 const allTasks = Object.values(this.tasks).flat();
                 const total = allTasks.length;
                 const completed = allTasks.filter(task => task.completed).length;
+                const activeNotifs = this.notifications.filter(n => !n.shown).length;
                 
                 document.getElementById('totalTasks').textContent = total;
                 document.getElementById('completedTasks').textContent = completed;
+                document.getElementById('activeNotifications').textContent = activeNotifs;
             }
 
             saveToStorage() {
                 localStorage.setItem('eisenhowerMatrix', JSON.stringify({
                     tasks: this.tasks,
-                    nextId: this.nextId
+                    nextId: this.nextId,
+                    notifications: this.notifications
                 }));
             }
 
@@ -870,6 +1144,7 @@
                         const data = JSON.parse(saved);
                         this.tasks = data.tasks || this.tasks;
                         this.nextId = data.nextId || this.nextId;
+                        this.notifications = data.notifications || [];
                     } catch (e) {
                         console.error('Ошибка загрузки данных:', e);
                     }
@@ -880,6 +1155,7 @@
                 if (confirm('Вы уверены, что хотите удалить все задачи?')) {
                     this.tasks = {1: [], 2: [], 3: [], 4: []};
                     this.nextId = 1;
+                    this.notifications = [];
                     this.saveToStorage();
                     this.renderAll();
                     this.updateStats();
@@ -891,6 +1167,7 @@
                 const data = {
                     tasks: this.tasks,
                     nextId: this.nextId,
+                    notifications: this.notifications,
                     exportedAt: new Date().toISOString()
                 };
                 
@@ -912,6 +1189,7 @@
                         if (data.tasks) {
                             this.tasks = data.tasks;
                             this.nextId = data.nextId || this.nextId;
+                            this.notifications = data.notifications || [];
                             this.saveToStorage();
                             this.renderAll();
                             this.updateStats();
@@ -964,7 +1242,6 @@
             }
 
             showNotification(message, type = 'success') {
-                // Удаляем старые уведомления
                 const oldNotification = document.querySelector('.notification');
                 if (oldNotification) oldNotification.remove();
 
@@ -978,6 +1255,10 @@
                     notification.classList.remove('show');
                     setTimeout(() => notification.remove(), 300);
                 }, 3000);
+            }
+
+            getActiveNotifications() {
+                return this.notifications.filter(n => !n.shown);
             }
         }
 
@@ -1008,7 +1289,6 @@
         function shareMatrix() {
             const shareUrl = matrix.generateShareableLink();
             
-            // Пытаемся использовать Web Share API если доступно
             if (navigator.share) {
                 navigator.share({
                     title: 'Моя матрица Эйзенхауэра',
@@ -1016,11 +1296,9 @@
                     url: shareUrl
                 });
             } else {
-                // Fallback - копирование в буфер обмена
                 navigator.clipboard.writeText(shareUrl).then(() => {
                     matrix.showNotification('Ссылка скопирована в буфер обмена!');
                 }).catch(() => {
-                    // Если clipboard API не доступно, показываем модальное окно
                     showShareModal(shareUrl);
                 });
             }
@@ -1076,6 +1354,52 @@
             }
         }
 
+        // Функции для уведомлений
+        function showNotificationsModal() {
+            const modal = document.getElementById('notificationsModal');
+            const list = document.getElementById('activeNotificationsList');
+            
+            const activeNotifications = matrix.getActiveNotifications();
+            list.innerHTML = '';
+            
+            if (activeNotifications.length === 0) {
+                list.innerHTML = '<p>Нет активных уведомлений</p>';
+            } else {
+                activeNotifications.forEach(notif => {
+                    const notifyTime = new Date(notif.notifyAt);
+                    const notifElement = document.createElement('div');
+                    notifElement.className = 'notification-item';
+                    notifElement.innerHTML = `
+                        <strong>${notif.taskText}</strong>
+                        <div>⏰ ${notifyTime.toLocaleString()}</div>
+                        <div class="notification-actions">
+                            <button class="btn-small btn-cancel-notification" onclick="matrix.removeNotification(${notif.id})">
+                                Отменить
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(notifElement);
+                });
+            }
+            
+            modal.classList.add('show');
+        }
+
+        function closeNotificationsModal() {
+            document.getElementById('notificationsModal').classList.remove('show');
+        }
+
+        function clearAllNotifications() {
+            if (confirm('Удалить все уведомления?')) {
+                matrix.notifications = [];
+                matrix.saveToStorage();
+                matrix.renderAll();
+                matrix.updateStats();
+                closeNotificationsModal();
+                matrix.showNotification('Все уведомления удалены');
+            }
+        }
+
         // Функции для заметок
         function saveNotes() {
             const notes = document.getElementById('notesInput').value;
@@ -1110,9 +1434,23 @@
             if (shareData) {
                 if (confirm('Найдены данные матрицы в ссылке. Загрузить их?')) {
                     matrix.loadFromShareableLink(shareData);
-                    // Очищаем URL чтобы при обновлении не предлагать снова
                     window.history.replaceState({}, '', window.location.pathname);
                 }
+            }
+
+            // Запрос разрешения на уведомления
+            if ("Notification" in window && Notification.permission === "default") {
+                setTimeout(() => {
+                    Notification.requestPermission();
+                }, 2000);
+            }
+        });
+
+        // Закрытие модального окна при клике вне его
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('notificationsModal');
+            if (e.target === modal) {
+                closeNotificationsModal();
             }
         });
     </script>
