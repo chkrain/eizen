@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
     <meta name="theme-color" content="#2d3748">
-    <title>Матрица Эйзенхауэра</title>
+    <title>Матрица</title>
     <style>
         * {
             margin: 0;
@@ -681,7 +681,7 @@
         </div>
 
         <header>
-            <h1>Матрица Эйзенхауэра</h1>
+            <h1>Запись дел</h1>
             <p class="description">Распределите задачи по важности и срочности</p>
             <div class="stats">
                 <div class="stat-item">Всего задач: <span id="totalTasks">0</span></div>
@@ -764,7 +764,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно для уведомлений -->
     <div class="modal" id="notificationsModal">
         <div class="modal-content">
             <h3>🔔 Управление уведомлениями</h3>
@@ -920,7 +919,6 @@
             }
 
             deleteTask(quadrant, taskId) {
-                // Удаляем уведомления для этой задачи
                 this.notifications = this.notifications.filter(notif => notif.taskId != taskId);
                 this.tasks[quadrant] = this.tasks[quadrant].filter(task => task.id != taskId);
                 this.saveToStorage();
@@ -955,7 +953,6 @@
 
             removeNotification(notificationId) {
                 this.notifications = this.notifications.filter(notif => notif.id != notificationId);
-                // Удаляем ID уведомления из задачи
                 for (const quadrant in this.tasks) {
                     this.tasks[quadrant].forEach(task => {
                         task.notifications = task.notifications.filter(id => id != notificationId);
@@ -980,33 +977,27 @@
                     }
                 });
 
-                // Удаляем старые показанные уведомления
                 this.notifications = this.notifications.filter(notif => {
                     const notifyTime = new Date(notif.notifyAt);
-                    return !notif.shown || (now - notifyTime) < 300000; // Храним 5 минут после показа
+                    return !notif.shown || (now - notifyTime) < 300000; 
                 });
 
                 this.saveToStorage();
             }
 
             showAlternativeNotification(notification) {
-                // Создаем красивую плавающую нотификацию на сайте
                 this.showNotification(`⏰ СРОЧНО: ${notification.taskText}`, 'urgent');
                 
-                // Воспроизводим звук, если пользователь разрешил
                 this.playNotificationSound();
                 
-                // Вибрация (если поддерживается)
                 if (navigator.vibrate) {
                     navigator.vibrate([200, 100, 200]);
                 }
                 
-                // Мигание вкладки
                 this.flashTab(notification.taskText);
             }
 
             playNotificationSound() {
-                // Создаем простой звук через Web Audio API
                 try {
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const oscillator = audioContext.createOscillator();
@@ -1246,14 +1237,12 @@
                     generatedAt: new Date().toISOString()
                 };
                 
-                // Используем encodeURIComponent для безопасного кодирования
                 const compressed = btoa(encodeURIComponent(JSON.stringify(data)));
                 return `${window.location.origin}${window.location.pathname}?data=${compressed}`;
             }
 
             loadFromShareableLink(compressedData) {
                 try {
-                    // Декодируем с учетом encodeURIComponent
                     const decodedData = decodeURIComponent(atob(compressedData));
                     const data = JSON.parse(decodedData);
                     if (data.tasks) {
@@ -1267,7 +1256,6 @@
                     }
                 } catch (error) {
                     console.error('Ошибка загрузки данных:', error);
-                    // Пробуем старый формат без encodeURIComponent
                     try {
                         const data = JSON.parse(atob(compressedData));
                         if (data.tasks) {
@@ -1317,7 +1305,6 @@
             }
         }
 
-        // Глобальные функции
         const matrix = new EisenhowerMatrix();
 
         function saveData() {
@@ -1347,11 +1334,10 @@
                 
                 if (navigator.share) {
                     navigator.share({
-                        title: 'Моя матрица Эйзенхауэра',
-                        text: 'Посмотрите на моё распределение задач по матрице Эйзенхауэра',
+                        title: 'Мои дела',
+                        text: 'Посмотрите на моё распределение задач',
                         url: shareUrl
                     }).catch(() => {
-                        // Если Web Share API не сработал, используем fallback
                         copyToClipboard(shareUrl);
                     });
                 } else {
@@ -1421,7 +1407,6 @@
             }
         }
 
-        // Функции для уведомлений
         function showNotificationsModal() {
             const modal = document.getElementById('notificationsModal');
             const list = document.getElementById('activeNotificationsList');
@@ -1467,7 +1452,6 @@
             }
         }
 
-        // Функции для заметок
         function saveNotes() {
             const notes = document.getElementById('notesInput').value;
             localStorage.setItem('eisenhowerNotes', notes);
@@ -1487,15 +1471,12 @@
             container.classList.toggle('hidden');
         }
 
-        // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
-            // Загрузка заметок
             const savedNotes = localStorage.getItem('eisenhowerNotes');
             if (savedNotes) {
                 document.getElementById('notesInput').value = savedNotes;
             }
             
-            // Проверка URL на наличие данных для импорта
             const urlParams = new URLSearchParams(window.location.search);
             const shareData = urlParams.get('data');
             if (shareData) {
@@ -1506,7 +1487,6 @@
             }
         });
 
-        // Закрытие модального окна при клике вне его
         document.addEventListener('click', function(e) {
             const modal = document.getElementById('notificationsModal');
             if (e.target === modal) {
