@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#2d3748">
     <title>Матрица Эйзенхауэра</title>
     <style>
         * {
@@ -14,22 +14,22 @@
         }
 
         :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
-            --bg-color: #f8f9fa;
-            --text-color: #333;
-            --card-bg: white;
-            --border-radius: 10px;
-            --shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-
-        [data-theme="dark"] {
             --primary-color: #7c93fb;
             --secondary-color: #9b6bd4;
             --bg-color: #1a1a1a;
             --text-color: #e0e0e0;
             --card-bg: #2d2d2d;
+            --border-radius: 10px;
             --shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+
+        [data-theme="light"] {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --bg-color: #f8f9fa;
+            --text-color: #333;
+            --card-bg: white;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
 
         [data-theme="blue"] {
@@ -104,8 +104,8 @@
             transform: scale(1.1);
         }
 
-        .theme-light { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .theme-dark { background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); }
+        .theme-light { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .theme-blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
         .theme-green { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
         .theme-purple { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
@@ -177,6 +177,8 @@
         }
 
         .task-count {
+            background: currentColor;
+            color: white;
             padding: 2px 8px;
             border-radius: 12px;
             font-size: 0.9rem;
@@ -189,7 +191,7 @@
         }
 
         .task {
-            background: #f8f9fa;
+            background: #3d3d3d;
             padding: 12px;
             margin-bottom: 10px;
             border-radius: 6px;
@@ -199,17 +201,17 @@
             position: relative;
         }
 
-        [data-theme="dark"] .task {
-            background: #3d3d3d;
+        [data-theme="light"] .task {
+            background: #f8f9fa;
         }
 
         .task:hover {
-            background: #e9ecef;
+            background: #4a4a4a;
             transform: translateX(5px);
         }
 
-        [data-theme="dark"] .task:hover {
-            background: #4a4a4a;
+        [data-theme="light"] .task:hover {
+            background: #e9ecef;
         }
 
         .task.dragging {
@@ -218,7 +220,7 @@
 
         .task-content {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: flex-start;
         }
 
@@ -260,15 +262,20 @@
         .task-input {
             flex: 1;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid #555;
             border-radius: 5px;
             font-size: 1rem;
             background: var(--card-bg);
             color: var(--text-color);
         }
 
+        [data-theme="light"] .task-input {
+            border-color: #ddd;
+        }
+
         .btn-add {
-            color: black;
+            background: currentColor;
+            color: white;
             border: none;
             padding: 10px 15px;
             border-radius: 5px;
@@ -320,17 +327,21 @@
         }
 
         .tasks::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #444;
             border-radius: 3px;
         }
 
+        [data-theme="light"] .tasks::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
         .tasks::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
+            background: #666;
             border-radius: 3px;
         }
 
         .tasks::-webkit-scrollbar-thumb:hover {
-            background: #a8a8a8;
+            background: #888;
         }
 
         .quadrant.highlight {
@@ -341,11 +352,11 @@
         .task.completed {
             opacity: 0.6;
             text-decoration: line-through;
-            background: #e8f5e8;
+            background: #2d4a2d;
         }
 
-        [data-theme="dark"] .task.completed {
-            background: #2d4a2d;
+        [data-theme="light"] .task.completed {
+            background: #e8f5e8;
         }
 
         .notification {
@@ -428,7 +439,7 @@
             width: 100%;
             height: 120px;
             padding: 15px;
-            border: 2px solid #e0e0e0;
+            border: 2px solid #555;
             border-radius: 8px;
             font-family: inherit;
             font-size: 1rem;
@@ -436,6 +447,10 @@
             transition: border-color 0.3s ease;
             background: var(--card-bg);
             color: var(--text-color);
+        }
+
+        [data-theme="light"] .notes-input {
+            border-color: #e0e0e0;
         }
 
         .notes-input:focus {
@@ -473,7 +488,7 @@
         }
 
         .modal-content {
-            background: white;
+            background: #2d2d2d;
             padding: 30px;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -483,9 +498,9 @@
             overflow-y: auto;
         }
 
-        [data-theme="dark"] .modal-content {
-            background: #2d2d2d;
-            color: white;
+        [data-theme="light"] .modal-content {
+            background: white;
+            color: #333;
         }
 
         .modal h3 {
@@ -502,7 +517,7 @@
 
         .time-input {
             padding: 10px;
-            border: 2px solid #ddd;
+            border: 2px solid #555;
             border-radius: 5px;
             font-size: 1rem;
             background: var(--card-bg);
@@ -510,15 +525,15 @@
         }
 
         .notification-item {
-            background: #f8f9fa;
+            background: #3d3d3d;
             padding: 15px;
             border-radius: 8px;
             border-left: 4px solid #e74c3c;
             margin-bottom: 10px;
         }
 
-        [data-theme="dark"] .notification-item {
-            background: #3d3d3d;
+        [data-theme="light"] .notification-item {
+            background: #f8f9fa;
         }
 
         .notification-actions {
@@ -657,8 +672,8 @@
     <div class="container">
         <div class="header-controls">
             <div class="theme-selector">
-                <div class="theme-btn theme-light active" data-theme="light" title="Светлая тема"></div>
-                <div class="theme-btn theme-dark" data-theme="dark" title="Тёмная тема"></div>
+                <div class="theme-btn theme-dark active" data-theme="dark" title="Тёмная тема"></div>
+                <div class="theme-btn theme-light" data-theme="light" title="Светлая тема"></div>
                 <div class="theme-btn theme-blue" data-theme="blue" title="Синяя тема"></div>
                 <div class="theme-btn theme-green" data-theme="green" title="Зелёная тема"></div>
                 <div class="theme-btn theme-purple" data-theme="purple" title="Фиолетовая тема"></div>
@@ -756,7 +771,7 @@
             <div class="notification-settings">
                 <div>
                     <h4>Добавить уведомление для задачи</h4>
-                    <p>Выберите задачу и установите время напоминания</p>
+                    <p>Нажмите на кнопку ⏰ рядом с задачей чтобы установить напоминание</p>
                 </div>
                 
                 <div id="activeNotificationsList">
@@ -764,10 +779,11 @@
                 </div>
                 
                 <div style="margin-top: 20px;">
-                    <h4>Настройки уведомлений</h4>
+                    <h4>Альтернативные уведомления</h4>
+                    <p>Если браузерные уведомления не работают, используйте встроенные:</p>
                     <label>
                         <input type="checkbox" id="enableNotifications" checked>
-                        Включить уведомления в браузере
+                        Включить звуковые уведомления
                     </label>
                 </div>
                 
@@ -801,11 +817,11 @@
                 this.updateStats();
                 this.setupTheme();
                 this.checkNotifications();
-                setInterval(() => this.checkNotifications(), 60000); // Проверка каждую минуту
+                setInterval(() => this.checkNotifications(), 30000); // Проверка каждые 30 секунд
             }
 
             setupTheme() {
-                const savedTheme = localStorage.getItem('eisenhowerTheme') || 'light';
+                const savedTheme = localStorage.getItem('eisenhowerTheme') || 'dark';
                 this.setTheme(savedTheme);
                 
                 document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -959,7 +975,7 @@
                 this.notifications.forEach(notification => {
                     const notifyTime = new Date(notification.notifyAt);
                     if (now >= notifyTime && !notification.shown) {
-                        this.showBrowserNotification(notification);
+                        this.showAlternativeNotification(notification);
                         notification.shown = true;
                     }
                 });
@@ -973,37 +989,61 @@
                 this.saveToStorage();
             }
 
-            showBrowserNotification(notification) {
-                if (!("Notification" in window)) {
-                    alert("Этот браузер не поддерживает уведомления");
-                    return;
+            showAlternativeNotification(notification) {
+                // Создаем красивую плавающую нотификацию на сайте
+                this.showNotification(`⏰ СРОЧНО: ${notification.taskText}`, 'urgent');
+                
+                // Воспроизводим звук, если пользователь разрешил
+                this.playNotificationSound();
+                
+                // Вибрация (если поддерживается)
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200]);
                 }
+                
+                // Мигание вкладки
+                this.flashTab(notification.taskText);
+            }
 
-                if (Notification.permission === "granted") {
-                    this.createNotification(notification);
-                } else if (Notification.permission !== "denied") {
-                    Notification.requestPermission().then(permission => {
-                        if (permission === "granted") {
-                            this.createNotification(notification);
-                        }
-                    });
+            playNotificationSound() {
+                // Создаем простой звук через Web Audio API
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                } catch (e) {
+                    console.log('Audio not supported');
                 }
             }
 
-            createNotification(notification) {
-                const notify = new Notification("⏰ Матрица Эйзенхауэра", {
-                    body: `Срочная задача: ${notification.taskText}`,
-                    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>",
-                    tag: "eisenhower-matrix"
-                });
+            flashTab(title) {
+                const originalTitle = document.title;
+                let isFlashing = false;
+                let flashCount = 0;
+                const maxFlashes = 10;
 
-                notify.onclick = () => {
-                    window.focus();
-                    notify.close();
-                };
+                const flash = setInterval(() => {
+                    document.title = isFlashing ? originalTitle : `⏰ ${title}`;
+                    isFlashing = !isFlashing;
+                    flashCount++;
 
-                // Показываем также всплывающее уведомление на сайте
-                this.showNotification(`⏰ ${notification.taskText}`, 'urgent');
+                    if (flashCount >= maxFlashes * 2) {
+                        clearInterval(flash);
+                        document.title = originalTitle;
+                    }
+                }, 500);
             }
 
             moveTask(taskId, newQuadrant) {
@@ -1202,17 +1242,20 @@
             generateShareableLink() {
                 const data = {
                     tasks: this.tasks,
-                    version: '1.0',
+                    version: '2.0',
                     generatedAt: new Date().toISOString()
                 };
                 
-                const compressed = btoa(JSON.stringify(data));
+                // Используем encodeURIComponent для безопасного кодирования
+                const compressed = btoa(encodeURIComponent(JSON.stringify(data)));
                 return `${window.location.origin}${window.location.pathname}?data=${compressed}`;
             }
 
             loadFromShareableLink(compressedData) {
                 try {
-                    const data = JSON.parse(atob(compressedData));
+                    // Декодируем с учетом encodeURIComponent
+                    const decodedData = decodeURIComponent(atob(compressedData));
+                    const data = JSON.parse(decodedData);
                     if (data.tasks) {
                         this.tasks = data.tasks;
                         this.nextId = this.findMaxId() + 1;
@@ -1224,6 +1267,21 @@
                     }
                 } catch (error) {
                     console.error('Ошибка загрузки данных:', error);
+                    // Пробуем старый формат без encodeURIComponent
+                    try {
+                        const data = JSON.parse(atob(compressedData));
+                        if (data.tasks) {
+                            this.tasks = data.tasks;
+                            this.nextId = this.findMaxId() + 1;
+                            this.saveToStorage();
+                            this.renderAll();
+                            this.updateStats();
+                            this.showNotification('Матрица успешно загружена!');
+                            return true;
+                        }
+                    } catch (e) {
+                        console.error('Ошибка загрузки в старом формате:', e);
+                    }
                 }
                 return false;
             }
@@ -1251,7 +1309,7 @@
                 setTimeout(() => {
                     notification.classList.remove('show');
                     setTimeout(() => notification.remove(), 300);
-                }, 3000);
+                }, 4000);
             }
 
             getActiveNotifications() {
@@ -1284,21 +1342,33 @@
         }
 
         function shareMatrix() {
-            const shareUrl = matrix.generateShareableLink();
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Моя матрица Эйзенхауэра',
-                    text: 'Посмотрите на моё распределение задач по матрице Эйзенхауэра',
-                    url: shareUrl
-                });
-            } else {
-                navigator.clipboard.writeText(shareUrl).then(() => {
-                    matrix.showNotification('Ссылка скопирована в буфер обмена!');
-                }).catch(() => {
-                    showShareModal(shareUrl);
-                });
+            try {
+                const shareUrl = matrix.generateShareableLink();
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: 'Моя матрица Эйзенхауэра',
+                        text: 'Посмотрите на моё распределение задач по матрице Эйзенхауэра',
+                        url: shareUrl
+                    }).catch(() => {
+                        // Если Web Share API не сработал, используем fallback
+                        copyToClipboard(shareUrl);
+                    });
+                } else {
+                    copyToClipboard(shareUrl);
+                }
+            } catch (error) {
+                console.error('Ошибка при создании ссылки:', error);
+                matrix.showNotification('Ошибка при создании ссылки', 'error');
             }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                matrix.showNotification('Ссылка скопирована в буфер обмена!');
+            }).catch(() => {
+                showShareModal(text);
+            });
         }
 
         function showShareModal(url) {
@@ -1310,13 +1380,13 @@
             `;
             
             modal.innerHTML = `
-                <div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px; width: 90%;">
+                <div style="background: var(--card-bg); color: var(--text-color); padding: 20px; border-radius: 10px; max-width: 500px; width: 90%;">
                     <h3>Поделиться матрицей</h3>
                     <p>Скопируйте ссылку:</p>
                     <input type="text" value="${url}" readonly 
-                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin: 10px 0;">
+                        style="width: 100%; padding: 10px; border: 1px solid #555; border-radius: 5px; margin: 10px 0; background: var(--card-bg); color: var(--text-color);">
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="navigator.clipboard.writeText('${url}').then(() => matrix.showNotification('Скопировано!'))" 
+                        <button onclick="navigator.clipboard.writeText('${url}').then(() => matrix.showNotification('Скопировано!')).then(() => this.parentElement.parentElement.parentElement.remove())" 
                                 style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; flex: 1;">
                             Копировать
                         </button>
@@ -1433,13 +1503,6 @@
                     matrix.loadFromShareableLink(shareData);
                     window.history.replaceState({}, '', window.location.pathname);
                 }
-            }
-
-            // Запрос разрешения на уведомления
-            if ("Notification" in window && Notification.permission === "default") {
-                setTimeout(() => {
-                    Notification.requestPermission();
-                }, 2000);
             }
         });
 
