@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Матрица Эйзенхауэра</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <meta name="theme-color" content="#667eea">
+    <title>Заметки</title>
     <style>
         * {
             margin: 0;
-            padding: 0;
+            padding: 0; 
             box-sizing: border-box;
         }
 
@@ -229,6 +231,106 @@
             background: #a8a8a8;
         }
 
+        .quadrant.highlight {
+            border-color: #ffeb3b !important;
+            box-shadow: 0 0 20px rgba(255, 235, 59, 0.5);
+        }
+
+        .task.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+            background: #e8f5e8;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .notes-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .notes-header h3 {
+            color: #333;
+            margin: 0;
+        }
+
+        .notes-container {
+            transition: all 0.3s ease;
+        }
+
+        .notes-container.hidden {
+            display: none;
+        }
+
+        .notes-input {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        .notes-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .notes-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-save-notes { background: #667eea; color: white; }
+        .btn-clear-notes { background: #95a5a6; color: white; }
+        .btn-notes-toggle { background: #f39c12; color: white; }
+
         @media (max-width: 768px) {
             .matrix {
                 grid-template-columns: 1fr;
@@ -247,6 +349,10 @@
         <header>
             <h1>Матрица Эйзенхауэра</h1>
             <p class="description">Распределите задачи по важности и срочности</p>
+            <div class="stats">
+            <div class="stat-item">Всего задач: <span id="totalTasks">0</span></div>
+            <div class="stat-item">Выполнено: <span id="completedTasks">0</span></div>
+        </div>
         </header>
 
         <div class="matrix">
@@ -303,6 +409,22 @@
             <button class="btn-control btn-save" onclick="saveData()">Сохранить</button>
             <button class="btn-control btn-load" onclick="loadData()">Загрузить</button>
             <button class="btn-control btn-clear" onclick="clearData()">Очистить всё</button>
+            <button class="btn-control btn-share" onclick="shareMatrix()">📤 Поделиться</button>
+            <button class="btn-control btn-import" onclick="importFromUrl()">📥 Импорт из ссылки</button>
+        </div>
+
+        <div class="notes-section">
+            <div class="notes-header">
+                <h3>📝 Быстрые заметки</h3>
+                <button class="btn-control btn-notes-toggle" onclick="toggleNotes()">Скрыть/Показать</button>
+            </div>
+            <div class="notes-container" id="notesContainer">
+                <textarea class="notes-input" id="notesInput" placeholder="Запишите свои мысли, идеи или напоминания..."></textarea>
+                <div class="notes-actions">
+                    <button class="btn-control btn-save-notes" onclick="saveNotes()">Сохранить заметки</button>
+                    <button class="btn-control btn-clear-notes" onclick="clearNotes()">Очистить</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -324,6 +446,7 @@
                 this.renderAll();
                 this.setupEventListeners();
                 this.setupDragAndDrop();
+                this.updateStats();
             }
 
             setupEventListeners() {
@@ -338,6 +461,7 @@
                         if (text) {
                             this.addTask(quadrant, text);
                             input.value = '';
+                            this.updateStats();
                         }
                     };
 
@@ -349,6 +473,12 @@
             }
 
             setupDragAndDrop() {
+                // Удаляем старые обработчики
+                document.querySelectorAll('.task').forEach(task => {
+                    task.replaceWith(task.cloneNode(true));
+                });
+
+                // Добавляем новые обработчики
                 document.querySelectorAll('.task').forEach(task => {
                     task.setAttribute('draggable', 'true');
                     
@@ -365,13 +495,22 @@
                 document.querySelectorAll('.tasks').forEach(container => {
                     container.addEventListener('dragover', (e) => {
                         e.preventDefault();
+                        container.closest('.quadrant').classList.add('highlight');
+                    });
+
+                    container.addEventListener('dragleave', (e) => {
+                        if (!container.contains(e.relatedTarget)) {
+                            container.closest('.quadrant').classList.remove('highlight');
+                        }
                     });
 
                     container.addEventListener('drop', (e) => {
                         e.preventDefault();
                         const taskId = e.dataTransfer.getData('text/plain');
                         const newQuadrant = container.id.split('-')[1];
+                        container.closest('.quadrant').classList.remove('highlight');
                         this.moveTask(taskId, newQuadrant);
+                        this.updateStats();
                     });
                 });
             }
@@ -380,18 +519,22 @@
                 const task = {
                     id: this.nextId++,
                     text: text,
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    completed: false
                 };
                 
                 this.tasks[quadrant].push(task);
                 this.saveToStorage();
                 this.renderQuadrant(quadrant);
+                this.showNotification('Задача добавлена!');
             }
 
             deleteTask(quadrant, taskId) {
                 this.tasks[quadrant] = this.tasks[quadrant].filter(task => task.id != taskId);
                 this.saveToStorage();
                 this.renderQuadrant(quadrant);
+                this.updateStats();
+                this.showNotification('Задача удалена');
             }
 
             moveTask(taskId, newQuadrant) {
@@ -416,6 +559,17 @@
                     this.saveToStorage();
                     this.renderQuadrant(oldQuadrant);
                     this.renderQuadrant(newQuadrant);
+                    this.showNotification('Задача перемещена');
+                }
+            }
+
+            toggleTask(quadrant, taskId) {
+                const task = this.tasks[quadrant].find(t => t.id == taskId);
+                if (task) {
+                    task.completed = !task.completed;
+                    this.saveToStorage();
+                    this.renderQuadrant(quadrant);
+                    this.updateStats();
                 }
             }
 
@@ -428,13 +582,15 @@
 
                 this.tasks[quadrant].forEach(task => {
                     const taskElement = document.createElement('div');
-                    taskElement.className = 'task';
+                    taskElement.className = `task ${task.completed ? 'completed' : ''}`;
                     taskElement.dataset.id = task.id;
                     taskElement.draggable = true;
                     
                     taskElement.innerHTML = `
                         <div class="task-content">
-                            <div class="task-text">${this.escapeHtml(task.text)}</div>
+                            <div class="task-text" onclick="matrix.toggleTask(${quadrant}, ${task.id})">
+                                ${this.escapeHtml(task.text)}
+                            </div>
                             <div class="task-actions">
                                 <button class="btn btn-edit" onclick="matrix.editTask(${quadrant}, ${task.id})">✏️</button>
                                 <button class="btn btn-delete" onclick="matrix.deleteTask(${quadrant}, ${task.id})">🗑️</button>
@@ -462,6 +618,7 @@
                         task.text = newText.trim();
                         this.saveToStorage();
                         this.renderQuadrant(quadrant);
+                        this.showNotification('Задача обновлена');
                     }
                 }
             }
@@ -473,6 +630,15 @@
                     .replace(/>/g, "&gt;")
                     .replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
+            }
+
+            updateStats() {
+                const allTasks = Object.values(this.tasks).flat();
+                const total = allTasks.length;
+                const completed = allTasks.filter(task => task.completed).length;
+                
+                document.getElementById('totalTasks').textContent = total;
+                document.getElementById('completedTasks').textContent = completed;
             }
 
             saveToStorage() {
@@ -501,6 +667,8 @@
                     this.nextId = 1;
                     this.saveToStorage();
                     this.renderAll();
+                    this.updateStats();
+                    this.showNotification('Все задачи очищены');
                 }
             }
 
@@ -518,6 +686,7 @@
                 a.download = `eisenhower-matrix-${new Date().toISOString().split('T')[0]}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
+                this.showNotification('Данные экспортированы');
             }
 
             importData(file) {
@@ -530,17 +699,74 @@
                             this.nextId = data.nextId || this.nextId;
                             this.saveToStorage();
                             this.renderAll();
-                            alert('Данные успешно загружены!');
+                            this.updateStats();
+                            this.showNotification('Данные успешно загружены!');
                         }
                     } catch (error) {
-                        alert('Ошибка при загрузке файла: неверный формат');
+                        this.showNotification('Ошибка при загрузке файла: неверный формат', 'error');
                     }
                 };
                 reader.readAsText(file);
             }
+
+            generateShareableLink() {
+                const data = {
+                    tasks: this.tasks,
+                    version: '1.0',
+                    generatedAt: new Date().toISOString()
+                };
+                
+                const compressed = btoa(JSON.stringify(data));
+                return `${window.location.origin}${window.location.pathname}?data=${compressed}`;
+            }
+
+            loadFromShareableLink(compressedData) {
+                try {
+                    const data = JSON.parse(atob(compressedData));
+                    if (data.tasks) {
+                        this.tasks = data.tasks;
+                        this.nextId = this.findMaxId() + 1;
+                        this.saveToStorage();
+                        this.renderAll();
+                        this.updateStats();
+                        this.showNotification('Матрица успешно загружена!');
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Ошибка загрузки данных:', error);
+                }
+                return false;
+            }
+
+            findMaxId() {
+                let maxId = 0;
+                for (const quadrant of Object.values(this.tasks)) {
+                    for (const task of quadrant) {
+                        if (task.id > maxId) maxId = task.id;
+                    }
+                }
+                return maxId;
+            }
+
+            showNotification(message, type = 'success') {
+                // Удаляем старые уведомления
+                const oldNotification = document.querySelector('.notification');
+                if (oldNotification) oldNotification.remove();
+
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => notification.classList.add('show'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
         }
 
-        // Глобальные функции для кнопок
+        // Глобальные функции
         const matrix = new EisenhowerMatrix();
 
         function saveData() {
@@ -563,6 +789,117 @@
         function clearData() {
             matrix.clearAll();
         }
+
+        function shareMatrix() {
+            const shareUrl = matrix.generateShareableLink();
+            
+            // Пытаемся использовать Web Share API если доступно
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Моя матрица Эйзенхауэра',
+                    text: 'Посмотрите на моё распределение задач по матрице Эйзенхауэра',
+                    url: shareUrl
+                });
+            } else {
+                // Fallback - копирование в буфер обмена
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    matrix.showNotification('Ссылка скопирована в буфер обмена!');
+                }).catch(() => {
+                    // Если clipboard API не доступно, показываем модальное окно
+                    showShareModal(shareUrl);
+                });
+            }
+        }
+
+        function showShareModal(url) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.5); display: flex; align-items: center; 
+                justify-content: center; z-index: 1000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 10px; max-width: 500px; width: 90%;">
+                    <h3>Поделиться матрицей</h3>
+                    <p>Скопируйте ссылку:</p>
+                    <input type="text" value="${url}" readonly 
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin: 10px 0;">
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="navigator.clipboard.writeText('${url}').then(() => matrix.showNotification('Скопировано!'))" 
+                                style="background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; flex: 1;">
+                            Копировать
+                        </button>
+                        <button onclick="this.closest('div').parentElement.remove()" 
+                                style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                            Закрыть
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.querySelector('input').select();
+        }
+
+        function importFromUrl() {
+            const url = prompt('Введите ссылку на матрицу:');
+            if (url) {
+                try {
+                    const urlObj = new URL(url);
+                    const compressedData = urlObj.searchParams.get('data');
+                    if (compressedData) {
+                        if (matrix.loadFromShareableLink(compressedData)) {
+                            matrix.showNotification('Матрица успешно импортирована!');
+                        } else {
+                            matrix.showNotification('Ошибка загрузки матрицы', 'error');
+                        }
+                    }
+                } catch (error) {
+                    matrix.showNotification('Неверная ссылка', 'error');
+                }
+            }
+        }
+
+        // Функции для заметок
+        function saveNotes() {
+            const notes = document.getElementById('notesInput').value;
+            localStorage.setItem('eisenhowerNotes', notes);
+            matrix.showNotification('Заметки сохранены!');
+        }
+
+        function clearNotes() {
+            if (confirm('Очистить все заметки?')) {
+                document.getElementById('notesInput').value = '';
+                localStorage.removeItem('eisenhowerNotes');
+                matrix.showNotification('Заметки очищены');
+            }
+        }
+
+        function toggleNotes() {
+            const container = document.getElementById('notesContainer');
+            container.classList.toggle('hidden');
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            // Загрузка заметок
+            const savedNotes = localStorage.getItem('eisenhowerNotes');
+            if (savedNotes) {
+                document.getElementById('notesInput').value = savedNotes;
+            }
+            
+            // Проверка URL на наличие данных для импорта
+            const urlParams = new URLSearchParams(window.location.search);
+            const shareData = urlParams.get('data');
+            if (shareData) {
+                if (confirm('Найдены данные матрицы в ссылке. Загрузить их?')) {
+                    matrix.loadFromShareableLink(shareData);
+                    // Очищаем URL чтобы при обновлении не предлагать снова
+                    window.history.replaceState({}, '', window.location.pathname);
+                }
+            }
+        });
     </script>
 </body>
 </html>
